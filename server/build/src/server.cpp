@@ -28,8 +28,11 @@ void Server::store_data(const std::string& key, const std::string& value) {
 void Server::handle_client(int client_socket) {
     // Пример обработки клиента: чтение данных и сохранение в хранилище
     char buffer[1024];
-    ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
-    if (bytes_received > 0) {
+    while(true){
+        ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
+        if (bytes_received <= 0) {
+            break; // Клиент отключился или ошибка
+        }
         buffer[bytes_received] = '\0'; // Завершаем строку
         std::string client_data(buffer);
         std::cout << "Received from client: " << client_data << std::endl;
