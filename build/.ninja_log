@@ -1,8 +1,0 @@
-# ninja log v6
-75	1096	7650995360920088	CMakeFiles/server.dir/src/server/server.cpp.obj	7f3fcf81eb4701bb
-71	1113	7650988633671094	CMakeFiles/server.dir/server.cpp.obj	1e946e4234d3b10f
-75	624	7650995682837266	build.ninja	47249125f6c466d9
-1099	1413	7650995371155812	server.exe	1f1091c0fabba7b3
-48	556	7650995682837266	build.ninja	47249125f6c466d9
-63	1074	7650995684337836	CMakeFiles/server.dir/src/server/server.cpp.obj	7f3fcf81eb4701bb
-1076	1362	7650995694432704	server.exe	1f1091c0fabba7b3

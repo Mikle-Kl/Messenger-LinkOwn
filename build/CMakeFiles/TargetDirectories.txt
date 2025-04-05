@@ -1,3 +1,0 @@
-C:/Users/petr1/OneDrive/Documents/Учеба/_Проект/build/CMakeFiles/server.dir
-C:/Users/petr1/OneDrive/Documents/Учеба/_Проект/build/CMakeFiles/edit_cache.dir
-C:/Users/petr1/OneDrive/Documents/Учеба/_Проект/build/CMakeFiles/rebuild_cache.dir

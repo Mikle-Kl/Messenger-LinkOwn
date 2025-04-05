@@ -1,0 +1,4 @@
+# ninja log v6
+11	2830	7655488993617451	CMakeFiles/server.dir/src/s_main.cpp.obj	2b75305258528545
+4	3074	7655488993555797	CMakeFiles/server.dir/src/server.cpp.obj	83dfd1bd87275982
+3075	3249	7655489024256080	server.exe	2e1d28044d0dd505
