@@ -20,17 +20,22 @@
 #include <chrono>
 #include <ctime>
 #include <iomanip>
-
+#include <thread>
+#include <mutex>
 
 class Client {
 public:
     Client();
     ~Client();
+    SOCKET get_socket() const;
     bool connect_to_server(const std::string& address, int port);
     bool send_message(const std::string& message);
+    void start_receiving();
+    void receive_messages();
     void time();
 private:
     int client_socket;
 };
+
 
 #endif // CLIENT_H

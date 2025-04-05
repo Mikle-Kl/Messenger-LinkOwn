@@ -1,5 +1,6 @@
 #include "client.h"
 
+
 int main() {
         
     #ifdef _WIN32
@@ -12,22 +13,28 @@ int main() {
         std::cerr << "Unable to connect. Exiting..." << std::endl;
         return 1;
     }
+    std::cout << "Введите никнейм: ";
+    std::string nickname;
+    std::getline(std::cin, nickname);
 
     std::string msg;
+    std::cout << "Если вы хотите выйти ('exit')" << std::endl ;
+    client.start_receiving();
     while(true){
-        
-        std::cout << "Введите сообщение (или 'exit'): ";
+        std::cout << ">";
         std::getline(std::cin, msg);
 
         if (msg == "exit") break;
+        if (msg.empty()) {
+            std::cout << "Сообщение не может быть пустым. Попробуйте снова." << std::endl;
+            continue;
+        }
         
-        
-        if (!client.send_message(msg)) {
+        if (!client.send_message(nickname+":"+msg)) {
             std::cerr << "Ошибка отправки. Завершаем работу клиента." << std::endl;
             break;
         }
-        client.time();
-        std::cout << "-------------------------------------------------------" << std::endl;
+        //client.time(); Времненно закоментил
     }
 
     return 0;

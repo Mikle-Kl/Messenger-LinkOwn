@@ -26,7 +26,7 @@ public:
     Server(); // Конструктор
     ~Server(); // Деструктор
     void start(int port); // Метод для запуска сервера
-    void handle_client(int client_socket); // Метод для обработки клиента
+    void handle_client(SOCKET client_socket); // Метод для обработки клиента
     void store_data(const std::string& key, const std::string& value); // Метод для хранения данных
 private:
     std::unordered_map<std::string, std::string> store; // Простое хранилище данных (ключ-значение)

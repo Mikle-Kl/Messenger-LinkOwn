@@ -2,7 +2,7 @@
 #include <cstring>
 #include <limits>
 
-
+std::mutex output_mutex;
 
 
 Client::Client() : client_socket(-1) {}
@@ -44,7 +44,7 @@ bool Client::connect_to_server(const std::string& address, int port) {
     server_addr.sin_port = htons(port);
     server_addr.sin_addr.s_addr = inet_addr(address.c_str());
 
-    // ⛔ Проверка на ошибку подключения
+    // Проверка на ошибку подключения
     if (
         #ifdef _WIN32
                 connect(client_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR
@@ -77,6 +77,8 @@ bool Client::send_message(const std::string& message) {
     // Отправка сообщения
     int bytes_sent = send(client_socket, data, length, 0);
 
+    // Блокируем вывод для синхронизации
+    std::lock_guard<std::mutex> lock(output_mutex);
     // Проверка на ошибку
     if (bytes_sent == -1
     #ifdef _WIN32
@@ -91,9 +93,37 @@ bool Client::send_message(const std::string& message) {
         #endif
         return false;
     } 
-    std::cout << "Сообщение отправлено -- ";
     return true;
 }
+
+void Client::receive_messages() {
+    std::thread([this]() {
+        char buffer[1024];
+        int bytes_received;
+        while (true) {
+            bytes_received = recv(this->client_socket, buffer, sizeof(buffer), 0);
+            if (bytes_received > 0) {
+                buffer[bytes_received] = '\0';
+                // Отображаем новое сообщение
+                std::lock_guard<std::mutex> lock(output_mutex);
+                std::cout << "\n[Новое сообщение]: " << buffer << std::endl;
+                // Принудительно перемещаем курсор в начало строки
+                std::cout << "> ";
+                std::cout.flush();  // Это нужно для правильного обновления курсора
+            }
+        }
+    }).detach();
+}
+
+void Client::start_receiving() {
+    receive_messages(); // Теперь вызываем метод, который запустит поток
+}
+
+SOCKET Client::get_socket() const {
+    return client_socket;
+}
+
+
 
 void Client::time(){
     // Получаем текущее системное время
@@ -105,3 +135,4 @@ void Client::time(){
     // Выводим время в стандартном формате (например, Sat Feb 25 15:30:25 2023)
     std::cout << std::put_time(tm_ptr, "%c") << std::endl;
 }
+

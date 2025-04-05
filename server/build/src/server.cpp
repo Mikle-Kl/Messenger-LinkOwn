@@ -1,9 +1,15 @@
 #include "server.h"
 #include <iostream>
+#include <algorithm>
+#include <unordered_set>
+#include <mutex>
+
+/*std::unordered_map<int, std::string> users;  // сокет -> никнейм*/
+std::unordered_set<SOCKET> clients;  // для быстрого поиска
+std::mutex clients_mutex;  // Для синхронизации потоков
 
 // Конструктор сервера
 Server::Server() : server_socket(-1) {}
-
 // Деструктор сервера
 Server::~Server() {
     #ifdef _WIN32
@@ -18,31 +24,59 @@ Server::~Server() {
     #endif
 }
 
-// Метод для хранения данных
-void Server::store_data(const std::string& key, const std::string& value) {
-    std::lock_guard<std::mutex> lock(store_mutex); // Защищаем доступ к store
-    store[key] = value;
-}
-
 // Метод для обработки клиента
-void Server::handle_client(int client_socket) {
-    // Пример обработки клиента: чтение данных и сохранение в хранилище
+void Server::handle_client(SOCKET client_socket) {
     char buffer[1024];
-    while(true){
-        ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
-        if (bytes_received <= 0) {
-            break; // Клиент отключился или ошибка
+    int bytes_received;
+
+    while ((bytes_received = recv(client_socket, buffer, sizeof(buffer), 0)) > 0) {
+        buffer[bytes_received] = '\0';  // Завершаем строку
+        std::string msg(buffer);
+
+        std::lock_guard<std::mutex> lock(clients_mutex);
+
+        std::cout << "Received message from client with socket " << client_socket << ": " << msg << std::endl;
+        /*// Установка никнейма
+        if (msg.substr(0, 6) == "/nick:") {
+            std::string nickname = msg.substr(6);
+            users[client_socket] = nickname;
+            std::cout << "Nickname for client with socket " << client_socket << " set to: " << nickname << std::endl;
+            continue;
         }
-        buffer[bytes_received] = '\0'; // Завершаем строку
-        std::string client_data(buffer);
-        std::cout << "Received from client: " << client_data << std::endl;
-        store_data("some_key", client_data); // Пример сохранения данных
+
+        // Команда /users
+        if (msg.substr(0, 6) == "/users") {
+            std::string user_list = "Active users:\n";
+            for (const auto& [sock, name] : users) {
+                user_list += "- " + name + "\n";
+            }
+            if (user_list == "Active users:\n") {
+                user_list += "No active users.\n";
+            }
+
+            std::cout << "Sending user list to client with socket " << client_socket << std::endl;
+            send(client_socket, user_list.c_str(), user_list.size(), 0);
+            continue;
+        }*/
+
+        // Пересылка сообщений другим клиентам
+        for (SOCKET client : clients) {
+            if (client != client_socket) {
+                send(client, buffer, bytes_received, 0);
+            }
+        }
     }
+    /*
+    // Удаляем клиента, если соединение закрыто
+    std::lock_guard<std::mutex> lock(clients_mutex);
+    clients.erase(client_socket);
+    users.erase(client_socket);*/
+
     #ifdef _WIN32
-            closesocket(client_socket);
+        closesocket(client_socket);
     #else
-            close(client_socket);
-    #endif // Закрываем сокет клиента
+        close(client_socket);
+    #endif
 }
 
 // Метод для запуска сервера
@@ -55,25 +89,22 @@ void Server::start(int port) {
             return;
         }
     #endif
-    // Создание сокета
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1) {
         std::cerr << "Error creating socket" << std::endl;
         return;
     }
 
-    sockaddr_in server_addr;
+    sockaddr_in server_addr = {};
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
     server_addr.sin_addr.s_addr = INADDR_ANY;
 
-    // Привязка сокета к адресу
     if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
         std::cerr << "Error binding socket" << std::endl;
         return;
     }
 
-    // Прослушивание порта
     if (listen(server_socket, 10) == -1) {
         std::cerr << "Error listening on socket" << std::endl;
         return;
@@ -82,10 +113,17 @@ void Server::start(int port) {
     std::cout << "Server listening on port " << port << std::endl;
 
     while (true) {
-        // Принятие подключения
-        int client_socket = accept(server_socket, nullptr, nullptr);
-        if (client_socket != -1) {
-            std::thread(&Server::handle_client, this, client_socket).detach();
+        SOCKET client_socket = accept(server_socket, nullptr, nullptr);
+        if (client_socket == INVALID_SOCKET) {
+            std::cerr << "Accept failed!" << std::endl;
+            continue;
         }
+
+        {
+            std::lock_guard<std::mutex> lock(clients_mutex);
+            clients.insert(client_socket);
+        }
+
+        std::thread(&Server::handle_client, this, client_socket).detach();
     }
 }
