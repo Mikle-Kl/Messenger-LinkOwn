@@ -44,7 +44,7 @@ bool Client::connect_to_server(const std::string& address, int port) {
     server_addr.sin_port = htons(port);
     server_addr.sin_addr.s_addr = inet_addr(address.c_str());
 
-    // РџСЂРѕРІРµСЂРєР° РЅР° РѕС€РёР±РєСѓ РїРѕРґРєР»СЋС‡РµРЅРёСЏ
+    // Проверка на ошибку подключения
     if (
         #ifdef _WIN32
                 connect(client_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR
@@ -56,30 +56,30 @@ bool Client::connect_to_server(const std::string& address, int port) {
         #ifdef _WIN32
                 std::cerr << "WSA Error code: " << WSAGetLastError() << std::endl;
         #else
-                perror("connect"); // Р’С‹РІРµРґРµС‚ РїРѕРґСЂРѕР±РЅРѕСЃС‚Рё РЅР° Linux/macOS
+                perror("connect"); // Выведет подробности на Linux/macOS
         #endif
             return false;
         }
 
-    std::cout << "РџРѕРґРєР»СЋС‡РµРЅРёРµ СѓСЃРїРµС€РЅРѕ!" << std::endl;
+    std::cout << "Подключение успешно!\nПользовательские команды ('/h')" << std::endl;
     return true;
 }
 
 bool Client::send_message(const std::string& message) {
-    // РџСЂРµРѕР±СЂР°Р·СѓРµРј СЃС‚СЂРѕРєСѓ РІ СѓРєР°Р·Р°С‚РµР»СЊ РЅР° C-style СЃС‚СЂРѕРєСѓ
+    // Преобразуем строку в указатель на C-style строку
     const char* data = message.c_str();
     if (message.size() > static_cast<size_t>(std::numeric_limits<int>::max())) {
         std::cerr << "Message is too large to send!" << std::endl;
         return false;
     }
-    int length = static_cast<int>(message.size()); // Р Р°Р·РјРµСЂ РѕС‚РїСЂР°РІР»СЏРµРјС‹С… РґР°РЅРЅС‹С…
-    // Р‘РµР·РѕРїР°РЅРѕРµ РїСЂРµРѕСЂР°Р·РѕРІР°РЅРёРµ size_t(Р±РµР·Р·РЅР°РєРѕРІРѕРіРѕ) РІ int СЃ РїСЂРѕРІРµСЂРєРѕР№
-    // РћС‚РїСЂР°РІРєР° СЃРѕРѕР±С‰РµРЅРёСЏ
+    int length = static_cast<int>(message.size()); // Размер отправляемых данных
+    // Безопаное преоразование size_t(беззнакового) в int с проверкой
+    // Отправка сообщения
     int bytes_sent = send(client_socket, data, length, 0);
 
-    // Р‘Р»РѕРєРёСЂСѓРµРј РІС‹РІРѕРґ РґР»СЏ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё
+    // Блокируем вывод для синхронизации
     std::lock_guard<std::mutex> lock(output_mutex);
-    // РџСЂРѕРІРµСЂРєР° РЅР° РѕС€РёР±РєСѓ
+    // Проверка на ошибку
     if (bytes_sent == -1
     #ifdef _WIN32
         || bytes_sent == SOCKET_ERROR
@@ -104,19 +104,19 @@ void Client::receive_messages() {
             bytes_received = recv(this->client_socket, buffer, sizeof(buffer), 0);
             if (bytes_received > 0) {
                 buffer[bytes_received] = '\0';
-                // РћС‚РѕР±СЂР°Р¶Р°РµРј РЅРѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ
+                // Отображаем новое сообщение
                 std::lock_guard<std::mutex> lock(output_mutex);
-                std::cout << "\n[РќРѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ]: " << buffer << std::endl;
-                // РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ РїРµСЂРµРјРµС‰Р°РµРј РєСѓСЂСЃРѕСЂ РІ РЅР°С‡Р°Р»Рѕ СЃС‚СЂРѕРєРё
+                std::cout << "\n[Новое сообщение]: " << buffer << std::endl;
+                // Принудительно перемещаем курсор в начало строки
                 std::cout << "> ";
-                std::cout.flush();  // Р­С‚Рѕ РЅСѓР¶РЅРѕ РґР»СЏ РїСЂР°РІРёР»СЊРЅРѕРіРѕ РѕР±РЅРѕРІР»РµРЅРёСЏ РєСѓСЂСЃРѕСЂР°
+                std::cout.flush();  // Это нужно для правильного обновления курсора
             }
         }
     }).detach();
 }
 
 void Client::start_receiving() {
-    receive_messages(); // РўРµРїРµСЂСЊ РІС‹Р·С‹РІР°РµРј РјРµС‚РѕРґ, РєРѕС‚РѕСЂС‹Р№ Р·Р°РїСѓСЃС‚РёС‚ РїРѕС‚РѕРє
+    receive_messages(); // Теперь вызываем метод, который запустит поток
 }
 
 SOCKET Client::get_socket() const {
@@ -126,13 +126,13 @@ SOCKET Client::get_socket() const {
 
 
 void Client::time(){
-    // РџРѕР»СѓС‡Р°РµРј С‚РµРєСѓС‰РµРµ СЃРёСЃС‚РµРјРЅРѕРµ РІСЂРµРјСЏ
+    // Получаем текущее системное время
     auto now = std::chrono::system_clock::now();
-    // РџСЂРµРѕР±СЂР°Р·СѓРµРј РІ time_t РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ СЃ ctime
+    // Преобразуем в time_t для использования с ctime
     std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-    // РџСЂРµРѕР±СЂР°Р·СѓРµРј time_t РІ СЃС‚СЂРѕРєСѓ
+    // Преобразуем time_t в строку
     std::tm* tm_ptr = std::localtime(&now_time);
-    // Р’С‹РІРѕРґРёРј РІСЂРµРјСЏ РІ СЃС‚Р°РЅРґР°СЂС‚РЅРѕРј С„РѕСЂРјР°С‚Рµ (РЅР°РїСЂРёРјРµСЂ, Sat Feb 25 15:30:25 2023)
+    // Выводим время в стандартном формате (например, Sat Feb 25 15:30:25 2023)
     std::cout << std::put_time(tm_ptr, "%c") << std::endl;
 }
 

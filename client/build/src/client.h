@@ -5,8 +5,7 @@
     #define _WINSOCK_DEPRECATED_NO_WARNINGS
     #include <winsock2.h>
     #include <ws2tcpip.h>
-    #include <windows.h>
-    #pragma comment(lib, "ws2_32.lib") // Р’ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РєРѕРјРїРёР»СЏС‚РѕСЂР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РґРѕР±РѕРІР»СЏРµРј
+    #pragma comment(lib, "ws2_32.lib") // В зависимости от компилятора пользователя добовляем
 #else
     #include <sys/types.h>
     #include <sys/socket.h>

@@ -1,8 +1,11 @@
-//{cmake --build .} РІ РїР°РїРєРµ build
+//{cmake --build .} в папке build
 #include "server.h"
 
 int main() {
+    
+    system("chcp 1251 > nul");
+
     Server server;
-    server.start(4444); // Р—Р°РїСѓСЃРє СЃРµСЂРІРµСЂР° РЅР° РїРѕСЂС‚Сѓ 8080
+    server.start(4444); // Запуск сервера на порту 8080
     return 0;
 }

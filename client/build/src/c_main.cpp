@@ -1,40 +1,44 @@
 #include "client.h"
 
-
 int main() {
         
-    #ifdef _WIN32
-    SetConsoleOutputCP(CP_UTF8);    // Ğ£ÑÑ‚Ğ°Ğ½Ğ°Ğ²Ğ»Ğ¸Ğ²Ğ°ĞµĞ¼ ĞºĞ¾Ğ´Ğ¸Ñ€Ğ¾Ğ²ĞºÑƒ UTF-8 Ğ´Ğ»Ñ Ğ²Ñ‹Ğ²Ğ¾Ğ´Ğ°
-    SetConsoleCP(CP_UTF8);          // Ğ˜ Ğ´Ğ»Ñ Ğ²Ğ²Ğ¾Ğ´Ğ°
-    #endif
+    system("chcp 1251 > nul");
 
     Client client;
     if (!client.connect_to_server("127.0.0.1", 4444)) {
         std::cerr << "Unable to connect. Exiting..." << std::endl;
         return 1;
     }
-    std::cout << "Ğ’Ğ²ĞµĞ´Ğ¸Ñ‚Ğµ Ğ½Ğ¸ĞºĞ½ĞµĞ¹Ğ¼: ";
+    std::cout << "Ââåäèòå íèêíåéì: ";
     std::string nickname;
     std::getline(std::cin, nickname);
 
     std::string msg;
-    std::cout << "Ğ•ÑĞ»Ğ¸ Ğ²Ñ‹ Ñ…Ğ¾Ñ‚Ğ¸Ñ‚Ğµ Ğ²Ñ‹Ğ¹Ñ‚Ğ¸ ('exit')" << std::endl ;
+    
     client.start_receiving();
+    client.send_message("/nick:"+nickname);
     while(true){
         std::cout << ">";
         std::getline(std::cin, msg);
-
-        if (msg == "exit") break;
-        if (msg.empty()) {
-            std::cout << "Ğ¡Ğ¾Ğ¾Ğ±Ñ‰ĞµĞ½Ğ¸Ğµ Ğ½Ğµ Ğ¼Ğ¾Ğ¶ĞµÑ‚ Ğ±Ñ‹Ñ‚ÑŒ Ğ¿ÑƒÑÑ‚Ñ‹Ğ¼. ĞŸĞ¾Ğ¿Ñ€Ğ¾Ğ±ÑƒĞ¹Ñ‚Ğµ ÑĞ½Ğ¾Ğ²Ğ°." << std::endl;
+     
+        if (msg=="/h")
+        {
+            std::cout << "Âûõîä èç ïğèëîæåíèÿ ('exit')" << std::endl ;
+            std::cout << "Âûâåñòè ñïèñîê ïîëüçîâàòåëåé ('/users')" << std::endl ;
+            continue;
+        } else if (msg == "exit") {break;
+        } else if (msg.empty()) {
+            std::cout << "Ñîîáùåíèå íå ìîæåò áûòü ïóñòûì. Ïîïğîáóéòå ñíîâà." << std::endl;
+            continue;
+        }else if (msg=="/users") {
+            client.send_message(msg);
             continue;
         }
-        
         if (!client.send_message(nickname+":"+msg)) {
-            std::cerr << "ĞÑˆĞ¸Ğ±ĞºĞ° Ğ¾Ñ‚Ğ¿Ñ€Ğ°Ğ²ĞºĞ¸. Ğ—Ğ°Ğ²ĞµÑ€ÑˆĞ°ĞµĞ¼ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñƒ ĞºĞ»Ğ¸ĞµĞ½Ñ‚Ğ°." << std::endl;
+            std::cerr << "Îøèáêà îòïğàâêè. Çàâåğøàåì ğàáîòó êëèåíòà." << std::endl;
             break;
         }
-        //client.time(); Ğ’Ñ€ĞµĞ¼Ğ½ĞµĞ½Ğ½Ğ¾ Ğ·Ğ°ĞºĞ¾Ğ¼ĞµĞ½Ñ‚Ğ¸Ğ»
+        //client.time(); Âğåìíåííî çàêîìåíòèë
     }
 
     return 0;
