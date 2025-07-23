@@ -3,7 +3,7 @@
 int main() {
         
     #ifdef _WIN32
-        system("chcp 1251 > nul");
+        system("chcp 65001 > nul");
         WSADATA wsaData; 
         if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
             std::cerr << "WSAStartup failed!" << std::endl;
@@ -11,14 +11,14 @@ int main() {
         }
     #endif
 
-    // Ïîäêëþ÷åíèå ê ñåðâåðó
+    // ÐŸÐ¾Ð´ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ðµ Ðº ÑÐµÑ€Ð²ÐµÑ€Ñƒ
     Client client;
     if (!client.connect_to_server("127.0.0.1", 4444)) {
-        std::cerr << "Íå óäàëîñü ïîäêëþ÷èòüñÿ. Ïðîãðàììà çàâåðøàåò ðàáîòó..." << std::endl;
+        std::cerr << "ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ Ð¿Ð¾Ð´ÐºÐ»ÑŽÑ‡Ð¸Ñ‚ÑŒÑÑ. ÐŸÑ€Ð¾Ð³Ñ€Ð°Ð¼Ð¼Ð° Ð·Ð°Ð²ÐµÑ€ÑˆÐ°ÐµÑ‚ Ñ€Ð°Ð±Ð¾Ñ‚Ñƒ..." << std::endl;
         return 1;
     }
 
-    std::cout << "Ââåäèòå íèêíåéì: ";
+    std::cout << "Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð½Ð¸ÐºÐ½ÐµÐ¹Ð¼: ";
     std::string nickname;
     std::getline(std::cin, nickname);
 
@@ -33,21 +33,21 @@ int main() {
      
         if (msg=="/h")
         {
-            std::cout << "Âûõîä èç ïðèëîæåíèÿ ('exit')" << std::endl ;
-            std::cout << "Âûâåñòè ñïèñîê ïîëüçîâàòåëåé ('/users')" << std::endl ;
+            std::cout << "Ð’Ñ‹Ñ…Ð¾Ð´ Ð¸Ð· Ð¿Ñ€Ð¸Ð»Ð¾Ð¶ÐµÐ½Ð¸Ñ ('exit')" << std::endl ;
+            std::cout << "Ð’Ñ‹Ð²ÐµÑÑ‚Ð¸ ÑÐ¿Ð¸ÑÐ¾Ðº Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»ÐµÐ¹ ('/users')" << std::endl ;
             continue;
         } else if (msg == "exit") { 
             client.stop(); 
             break;
         } else if (msg.empty()) {
-            std::cout << "Ñîîáùåíèå íå ìîæåò áûòü ïóñòûì. Ïîïðîáóéòå ñíîâà." << std::endl;
+            std::cout << "Ð¡Ð¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ Ð½Ðµ Ð¼Ð¾Ð¶ÐµÑ‚ Ð±Ñ‹Ñ‚ÑŒ Ð¿ÑƒÑÑ‚Ñ‹Ð¼. ÐŸÐ¾Ð¿Ñ€Ð¾Ð±ÑƒÐ¹Ñ‚Ðµ ÑÐ½Ð¾Ð²Ð°." << std::endl;
             continue;
         }else if (msg=="/users") {
             client.send_message(msg);
             continue;
         }
         if (!client.send_message(nickname+":"+msg)) {
-            std::cerr << "Îøèáêà îòïðàâêè. Çàâåðøàåì ðàáîòó êëèåíòà." << std::endl;
+            std::cerr << "ÐžÑˆÐ¸Ð±ÐºÐ° Ð¾Ñ‚Ð¿Ñ€Ð°Ð²ÐºÐ¸. Ð—Ð°Ð²ÐµÑ€ÑˆÐ°ÐµÐ¼ Ñ€Ð°Ð±Ð¾Ñ‚Ñƒ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð°." << std::endl;
             break;
         }
     }

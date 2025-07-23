@@ -2,36 +2,36 @@
 #define SERVER_H
 #include <string>
 #include <sstream>
-#include <thread> // Для создания потоков
-#include <unordered_map> //Ключ-значение Хэш-таблица
-#include <mutex> //Синхронизации доступа к общим ресурсам между потоками
+#include <thread> // Р”Р»СЏ СЃРѕР·РґР°РЅРёСЏ РїРѕС‚РѕРєРѕРІ
+#include <unordered_map> //РљР»СЋС‡-Р·РЅР°С‡РµРЅРёРµ РҐСЌС€-С‚Р°Р±Р»РёС†Р°
+#include <mutex> //РЎРёРЅС…СЂРѕРЅРёР·Р°С†РёРё РґРѕСЃС‚СѓРїР° Рє РѕР±С‰РёРј СЂРµСЃСѓСЂСЃР°Рј РјРµР¶РґСѓ РїРѕС‚РѕРєР°РјРё
 #include <vector>
 
 #ifdef _WIN32
-    #define _WINSOCK_DEPRECATED_NO_WARNINGS // Деактивирует предупреждения о старых функциях Winsock
-    #include <winsock2.h> // Для работы с сокетами
-    #include <ws2tcpip.h> // Для подключения новых функций TCP/IP
+    #define _WINSOCK_DEPRECATED_NO_WARNINGS // Р”РµР°РєС‚РёРІРёСЂСѓРµС‚ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёСЏ Рѕ СЃС‚Р°СЂС‹С… С„СѓРЅРєС†РёСЏС… Winsock
+    #include <winsock2.h> // Р”Р»СЏ СЂР°Р±РѕС‚С‹ СЃ СЃРѕРєРµС‚Р°РјРё
+    #include <ws2tcpip.h> // Р”Р»СЏ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РЅРѕРІС‹С… С„СѓРЅРєС†РёР№ TCP/IP
     #include <windows.h>
-    #pragma comment(lib, "ws2_32.lib") // Для линковки с библиотекой Winsock
+    #pragma comment(lib, "ws2_32.lib") // Р”Р»СЏ Р»РёРЅРєРѕРІРєРё СЃ Р±РёР±Р»РёРѕС‚РµРєРѕР№ Winsock
 #else
-    #include <sys/types.h> // Включает определения базовых типов данных, которые используются в системных вызовах
-    #include <sys/socket.h> // Включает основные определения для работы с сокетами
+    #include <sys/types.h> // Р’РєР»СЋС‡Р°РµС‚ РѕРїСЂРµРґРµР»РµРЅРёСЏ Р±Р°Р·РѕРІС‹С… С‚РёРїРѕРІ РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ РёСЃРїРѕР»СЊР·СѓСЋС‚СЃСЏ РІ СЃРёСЃС‚РµРјРЅС‹С… РІС‹Р·РѕРІР°С…
+    #include <sys/socket.h> // Р’РєР»СЋС‡Р°РµС‚ РѕСЃРЅРѕРІРЅС‹Рµ РѕРїСЂРµРґРµР»РµРЅРёСЏ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ СЃРѕРєРµС‚Р°РјРё
     #include <netinet/in.h>
     #include <arpa/inet.h>
-    #include <unistd.h> // Для close(), если на Linux
+    #include <unistd.h> // Р”Р»СЏ close(), РµСЃР»Рё РЅР° Linux
     #include <errno.h>
 #endif
 
 class Server {
 public:
-    Server(); // Конструктор
-    ~Server(); // Деструктор
-    void start(int port); // Метод для запуска сервера
-    void handle_client(SOCKET client_socket); // Метод для обработки клиента
+    Server(); // РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
+    ~Server(); // Р”РµСЃС‚СЂСѓРєС‚РѕСЂ
+    void start(int port); // РњРµС‚РѕРґ РґР»СЏ Р·Р°РїСѓСЃРєР° СЃРµСЂРІРµСЂР°
+    void handle_client(SOCKET client_socket); // РњРµС‚РѕРґ РґР»СЏ РѕР±СЂР°Р±РѕС‚РєРё РєР»РёРµРЅС‚Р°
 private:
-    std::unordered_map<std::string, std::string> store; // Простое хранилище данных (ключ-значение)
-    std::mutex store_mutex; // Мьютекс для синхронизации доступа к хранилищу данных
-    int server_socket; // Сокет сервера
+    std::unordered_map<std::string, std::string> store; // РџСЂРѕСЃС‚РѕРµ С…СЂР°РЅРёР»РёС‰Рµ РґР°РЅРЅС‹С… (РєР»СЋС‡-Р·РЅР°С‡РµРЅРёРµ)
+    std::mutex store_mutex; // РњСЊСЋС‚РµРєСЃ РґР»СЏ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё РґРѕСЃС‚СѓРїР° Рє С…СЂР°РЅРёР»РёС‰Сѓ РґР°РЅРЅС‹С…
+    int server_socket; // РЎРѕРєРµС‚ СЃРµСЂРІРµСЂР°
 };
 
     

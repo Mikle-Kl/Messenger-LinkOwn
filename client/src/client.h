@@ -5,7 +5,7 @@
     #define _WINSOCK_DEPRECATED_NO_WARNINGS
     #include <winsock2.h>
     #include <ws2tcpip.h>
-    #pragma comment(lib, "ws2_32.lib") // В зависимости от компилятора 
+    #pragma comment(lib, "ws2_32.lib") // Р’ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РєРѕРјРїРёР»СЏС‚РѕСЂР° 
 #else
     #include <sys/types.h>
     #include <sys/socket.h>
@@ -18,7 +18,7 @@
 #include <iostream>
 #include <atomic>
 #include <thread>
-#include <mutex> //подключает механизмы синхронизации потоков
+#include <mutex> //РїРѕРґРєР»СЋС‡Р°РµС‚ РјРµС…Р°РЅРёР·РјС‹ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё РїРѕС‚РѕРєРѕРІ
 
 
 class Client {

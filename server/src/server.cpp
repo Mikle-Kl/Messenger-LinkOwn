@@ -4,13 +4,13 @@
 #include <unordered_set>
 
 
-std::unordered_map<int, std::string> users;  // сокет -> никнейм
-std::unordered_set<SOCKET> clients;  // для быстрого поиска
-std::mutex clients_mutex;  // Для синхронизации потоков
+std::unordered_map<int, std::string> users;  // СЃРѕРєРµС‚ -> РЅРёРєРЅРµР№Рј
+std::unordered_set<SOCKET> clients;  // РґР»СЏ Р±С‹СЃС‚СЂРѕРіРѕ РїРѕРёСЃРєР°
+std::mutex clients_mutex;  // Р”Р»СЏ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё РїРѕС‚РѕРєРѕРІ
 
-// Конструктор сервера
+// РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ СЃРµСЂРІРµСЂР°
 Server::Server() : server_socket(-1) {}
-// Деструктор сервера
+// Р”РµСЃС‚СЂСѓРєС‚РѕСЂ СЃРµСЂРІРµСЂР°
 Server::~Server() {
     #ifdef _WIN32
         if (server_socket != INVALID_SOCKET) {
@@ -24,41 +24,41 @@ Server::~Server() {
     #endif
 }
 
-// Метод для обработки клиента
+// РњРµС‚РѕРґ РґР»СЏ РѕР±СЂР°Р±РѕС‚РєРё РєР»РёРµРЅС‚Р°
 void Server::handle_client(SOCKET client_socket) {
     char buffer[1024];
     int bytes_received;
 
     while ((bytes_received = recv(client_socket, buffer, sizeof(buffer), 0)) > 0) {
-        buffer[bytes_received] = '\0';  // Завершаем строку
+        buffer[bytes_received] = '\0';  // Р—Р°РІРµСЂС€Р°РµРј СЃС‚СЂРѕРєСѓ
         std::string msg(buffer);
         
 
         std::lock_guard<std::mutex> lock(clients_mutex);
 
-        std::cout << "Сообщение от клиента с сокетом - " << client_socket << ": " << msg << std::endl;
+        std::cout << "РЎРѕРѕР±С‰РµРЅРёРµ РѕС‚ РєР»РёРµРЅС‚Р° СЃ СЃРѕРєРµС‚РѕРј - " << client_socket << ": " << msg << std::endl;
 
-        // Установка никнейма
+        // РЈСЃС‚Р°РЅРѕРІРєР° РЅРёРєРЅРµР№РјР°
         if (msg.substr(0, 6) == "/nick:") {
             std::string nickname = msg.substr(6);
             users[client_socket] = nickname;
-            std::cout << "Никнейм клиента с сокетом - " << client_socket << " записан как: " << nickname << std::endl;
+            std::cout << "РќРёРєРЅРµР№Рј РєР»РёРµРЅС‚Р° СЃ СЃРѕРєРµС‚РѕРј - " << client_socket << " Р·Р°РїРёСЃР°РЅ РєР°Рє: " << nickname << std::endl;
             continue;
         }
 
-        // Команда /users
+        // РљРѕРјР°РЅРґР° /users
         if (msg.substr(0, 6) == "/users") {
-            std::string user_list = "(SERVER) Активные пользователи:\n";
+            std::string user_list = "(SERVER) РђРєС‚РёРІРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё:\n";
             for (const auto& [sock, name] : users) {
                 user_list += "- " + name + "\n";
             }
             
-            std::cout << "Отправлен список пользоватей клиенту с сокетом " << client_socket << std::endl;
+            std::cout << "РћС‚РїСЂР°РІР»РµРЅ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР№ РєР»РёРµРЅС‚Сѓ СЃ СЃРѕРєРµС‚РѕРј " << client_socket << std::endl;
             send(client_socket, user_list.c_str(), user_list.size(), 0);
             continue;
         }
 
-        // Пересылка сообщений другим клиентам
+        // РџРµСЂРµСЃС‹Р»РєР° СЃРѕРѕР±С‰РµРЅРёР№ РґСЂСѓРіРёРј РєР»РёРµРЅС‚Р°Рј
         for (SOCKET client : clients) {
             if (client != client_socket) {
                 send(client, buffer, bytes_received, 0);
@@ -66,12 +66,12 @@ void Server::handle_client(SOCKET client_socket) {
         }
     }
     
-    // Удаляем клиента, если соединение закрыто
+    // РЈРґР°Р»СЏРµРј РєР»РёРµРЅС‚Р°, РµСЃР»Рё СЃРѕРµРґРёРЅРµРЅРёРµ Р·Р°РєСЂС‹С‚Рѕ
     std::lock_guard<std::mutex> lock(clients_mutex);
-    std::cout << "Клиент с сокетом " << client_socket << " отключился." << std::endl;
+    std::cout << "РљР»РёРµРЅС‚ СЃ СЃРѕРєРµС‚РѕРј " << client_socket << " РѕС‚РєР»СЋС‡РёР»СЃСЏ." << std::endl;
     clients.erase(client_socket);
     if (users.count(client_socket)) {
-        std::cout << "Удаление никнейма: " << users[client_socket] << std::endl;
+        std::cout << "РЈРґР°Р»РµРЅРёРµ РЅРёРєРЅРµР№РјР°: " << users[client_socket] << std::endl;
         users.erase(client_socket);
     }
 
@@ -82,7 +82,7 @@ void Server::handle_client(SOCKET client_socket) {
     #endif
 }
 
-// Метод для запуска сервера
+// РњРµС‚РѕРґ РґР»СЏ Р·Р°РїСѓСЃРєР° СЃРµСЂРІРµСЂР°
 void Server::start(int port) {
     #ifdef _WIN32
         WSADATA wsaData;

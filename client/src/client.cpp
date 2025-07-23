@@ -16,7 +16,7 @@ bool Client::connect_to_server(const std::string& address, int port) {
         || client_socket == INVALID_SOCKET 
         #endif
     ) {
-        std::cerr << "Ошибка создания сокета!" << std::endl;
+        std::cerr << "РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ СЃРѕРєРµС‚Р°!" << std::endl;
         return false;
     }
 
@@ -25,7 +25,7 @@ bool Client::connect_to_server(const std::string& address, int port) {
     server_addr.sin_port = htons(port);
     server_addr.sin_addr.s_addr = inet_addr(address.c_str());
 
-    // Проверка на ошибку подключения
+    // РџСЂРѕРІРµСЂРєР° РЅР° РѕС€РёР±РєСѓ РїРѕРґРєР»СЋС‡РµРЅРёСЏ
     if (
         #ifdef _WIN32
                 connect(client_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR
@@ -37,17 +37,17 @@ bool Client::connect_to_server(const std::string& address, int port) {
         #ifdef _WIN32
                 std::cerr << "WSA Error code: " << WSAGetLastError() << std::endl;
         #else
-                perror("connect"); // Выведет подробности на Linux/macOS
+                perror("connect"); // Р’С‹РІРµРґРµС‚ РїРѕРґСЂРѕР±РЅРѕСЃС‚Рё РЅР° Linux/macOS
         #endif
             return false;
         }
 
-    std::cout << "Подключение успешно!\nПользовательские команды ('/h')" << std::endl;
+    std::cout << "РџРѕРґРєР»СЋС‡РµРЅРёРµ СѓСЃРїРµС€РЅРѕ!\nРџРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ РєРѕРјР°РЅРґС‹ ('/h')" << std::endl;
     return true;
 }
 
 bool Client::send_message(const std::string& message) {
-    // Преобразуем строку в указатель на C-style строку
+    // РџСЂРµРѕР±СЂР°Р·СѓРµРј СЃС‚СЂРѕРєСѓ РІ СѓРєР°Р·Р°С‚РµР»СЊ РЅР° C-style СЃС‚СЂРѕРєСѓ
     const char* data = message.c_str();
     if (message.size() > static_cast<size_t>(std::numeric_limits<int>::max())) {
         std::cerr << "Message is too large to send!" << std::endl;
@@ -56,9 +56,9 @@ bool Client::send_message(const std::string& message) {
     int length = static_cast<int>(message.size()); 
     int bytes_sent = send(client_socket, data, length, 0);
 
-    // Блокируем вывод для синхронизации
+    // Р‘Р»РѕРєРёСЂСѓРµРј РІС‹РІРѕРґ РґР»СЏ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё
     std::lock_guard<std::mutex> lock(output_mutex);
-    // Проверка на ошибку
+    // РџСЂРѕРІРµСЂРєР° РЅР° РѕС€РёР±РєСѓ
     if (bytes_sent == -1
     #ifdef _WIN32
         || bytes_sent == SOCKET_ERROR
@@ -85,18 +85,18 @@ void Client::receive_messages() {
             bytes_received = recv(this->client_socket, buffer, sizeof(buffer) - 1, 0);
 
             if (bytes_received > 0) {
-                std::string message(buffer, bytes_received);  // создаём строку ИМЕННО с нужной длиной
+                std::string message(buffer, bytes_received);  // СЃРѕР·РґР°С‘Рј СЃС‚СЂРѕРєСѓ РРњР•РќРќРћ СЃ РЅСѓР¶РЅРѕР№ РґР»РёРЅРѕР№
 
                 std::lock_guard<std::mutex> lock(output_mutex);
                 
-                std::cout << "\r\33[2K";  // \r - возврат каретки в начало, \33[2K - очистка всей строки
-                std::cout << "[Новое сообщение]: " << message << std::endl;
+                std::cout << "\r\33[2K";  // \r - РІРѕР·РІСЂР°С‚ РєР°СЂРµС‚РєРё РІ РЅР°С‡Р°Р»Рѕ, \33[2K - РѕС‡РёСЃС‚РєР° РІСЃРµР№ СЃС‚СЂРѕРєРё
+                std::cout << "[РќРѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ]: " << message << std::endl;
                 std::cout << "> ";
                 std::cout.flush();
             }
-            else if (bytes_received == 0) { // Проверка на ошибку
+            else if (bytes_received == 0) { // РџСЂРѕРІРµСЂРєР° РЅР° РѕС€РёР±РєСѓ
                 std::lock_guard<std::mutex> lock(output_mutex);
-                std::cout << "\n[Сервер закрыл соединение]\n";
+                std::cout << "\n[РЎРµСЂРІРµСЂ Р·Р°РєСЂС‹Р» СЃРѕРµРґРёРЅРµРЅРёРµ]\n";
                 running = false;
                 break;
             }
@@ -107,7 +107,7 @@ void Client::receive_messages() {
                     if (error_code == WSAEINTR) {
                         continue;
                     }
-                    std::cerr << "Ошибка при получении (recv): " << error_code << std::endl;
+                    std::cerr << "РћС€РёР±РєР° РїСЂРё РїРѕР»СѓС‡РµРЅРёРё (recv): " << error_code << std::endl;
                 #else
                     perror("recv");
                 #endif
