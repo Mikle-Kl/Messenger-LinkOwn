@@ -1,100 +1,117 @@
 #include "server.h"
 #include <iostream>
-#include <algorithm>
-#include <unordered_set>
 
 
-std::unordered_map<int, std::string> users;  // сокет -> никнейм
-std::unordered_set<SOCKET> clients;  // для быстрого поиска
-std::mutex clients_mutex;  // Для синхронизации потоков
+Server::Server() : server_socket(INVALID_SOCKET) {}
 
-// Конструктор сервера
-Server::Server() : server_socket(-1) {}
-// Деструктор сервера
 Server::~Server() {
-    #ifdef _WIN32
-        if (server_socket != INVALID_SOCKET) {
-            closesocket(server_socket);
-            WSACleanup();
-        }
-    #else
-        if (server_socket != -1) {
-            close(server_socket);
-        }
-    #endif
+    if (server_socket != INVALID_SOCKET) {
+        closesocket(server_socket);
+    }
+    if (wsa_initialized) {
+        WSACleanup();
+    }
 }
 
-// Метод для обработки клиента
 void Server::handle_client(SOCKET client_socket) {
     char buffer[1024];
     int bytes_received;
 
     while ((bytes_received = recv(client_socket, buffer, sizeof(buffer), 0)) > 0) {
-        buffer[bytes_received] = '\0';  // Завершаем строку
-        std::string msg(buffer);
-        
+        std::string msg(buffer, bytes_received);
 
-        std::lock_guard<std::mutex> lock(clients_mutex);
+        {
+            std::lock_guard<std::mutex> lock(clients_mutex);
+            std::cout << "Сообщение от клиента с сокетом - " << client_socket << ": " << msg << std::endl;
 
-        std::cout << "Сообщение от клиента с сокетом - " << client_socket << ": " << msg << std::endl;
+            if (handle_command(client_socket, msg)) { continue; } // если это команда — не рассылаем 
 
-        // Установка никнейма
-        if (msg.substr(0, 6) == "/nick:") {
-            std::string nickname = msg.substr(6);
-            users[client_socket] = nickname;
-            std::cout << "Никнейм клиента с сокетом - " << client_socket << " записан как: " << nickname << std::endl;
-            continue;
-        }
+            std::string sender = users.count(client_socket) ? users[client_socket] : "Unknown";
+            std::string formatted_msg = "(" + sender + "): " + msg;
+            broadcast(client_socket, formatted_msg.c_str(), formatted_msg.size());
 
-        // Команда /users
-        if (msg.substr(0, 6) == "/users") {
-            std::string user_list = "(SERVER) Активные пользователи:\n";
-            for (const auto& [sock, name] : users) {
-                user_list += "- " + name + "\n";
-            }
-            
-            std::cout << "Отправлен список пользоватей клиенту с сокетом " << client_socket << std::endl;
-            send(client_socket, user_list.c_str(), user_list.size(), 0);
-            continue;
-        }
-
-        // Пересылка сообщений другим клиентам
-        for (SOCKET client : clients) {
-            if (client != client_socket) {
-                send(client, buffer, bytes_received, 0);
-            }
         }
     }
-    
-    // Удаляем клиента, если соединение закрыто
+
+    // Закрытие и удаление
     std::lock_guard<std::mutex> lock(clients_mutex);
+    closesocket(client_socket);
     std::cout << "Клиент с сокетом " << client_socket << " отключился." << std::endl;
     clients.erase(client_socket);
     if (users.count(client_socket)) {
         std::cout << "Удаление никнейма: " << users[client_socket] << std::endl;
         users.erase(client_socket);
     }
-
-    #ifdef _WIN32
-        closesocket(client_socket);
-    #else
-        close(client_socket);
-    #endif
 }
 
-// Метод для запуска сервера
-void Server::start(int port) {
-    #ifdef _WIN32
-        WSADATA wsaData;
-        int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-        if (result != 0) {
-            std::cerr << "WSAStartup failed: " << result << std::endl;
-            return;
+
+bool Server::handle_command(SOCKET client_socket, const std::string& msg) {
+    if (msg.rfind("/nick:", 0) == 0) {
+        std::string nickname = msg.substr(6);
+        // Удалим пробелы в начале и конце ника
+        nickname.erase(0, nickname.find_first_not_of(" \t\r\n"));
+        nickname.erase(nickname.find_last_not_of(" \t\r\n") + 1);
+
+        if (nickname.empty()) {
+            std::string error = "(SERVER) Ник не может быть пустым.\n";
+            send(client_socket, error.c_str(), error.size(), 0);
+            return true;
         }
-    #endif
+
+        // Проверка на уникальность ника
+        for (const auto& [sock, name] : users) {
+            if (name == nickname) {
+                std::string error = "(SERVER) Ник '" + nickname + "' уже занят.\n";
+                send(client_socket, error.c_str(), error.size(), 0);
+                return true;
+            }
+        }
+
+        users[client_socket] = nickname;
+        std::string ok_msg = "(SERVER) Ник '" + nickname + "' установлен.\n"; 
+        send(client_socket, ok_msg.c_str(), ok_msg.size(), 0);                
+        std::cout << "Никнейм клиента с сокетом - " << client_socket << " записан как: " << nickname << std::endl;
+        return true;
+    }
+
+    if (msg == "/users") {
+        std::string user_list = "(SERVER) Активные пользователи:\n";
+        for (const auto& [sock, name] : users) {
+            user_list += "- " + name + "\n";
+        }
+        std::cout << "Отправлен список пользователей клиенту с сокетом " << client_socket << std::endl;
+        send(client_socket, user_list.c_str(), user_list.size(), 0);
+        return true;
+    }
+
+    return false; 
+}
+
+void Server::broadcast(SOCKET from_socket, const char* data, int length) {
+    for (SOCKET client : clients) {
+        if (client != from_socket) {
+            if (send(client, data, length, 0) == SOCKET_ERROR) {
+                std::cerr << "Ошибка отправки клиенту: " << client << std::endl;
+            }
+        }
+    }
+}
+
+/*-----------------------------------------------   Метод для запуска сервера   --------------------------------------------------------*/
+void Server::start(int port) {
+
+    WSADATA wsaData;
+    int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (result != 0) {
+        std::cerr << "WSAStartup failed: " << result << std::endl;
+        return;
+    }
+
+    wsa_initialized = true;
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_socket == -1) {
-        std::cerr << "Error creating socket" << std::endl;
+
+    if (server_socket == INVALID_SOCKET) {
+        std::cerr << "Ошибка создания сокета" << std::endl;
         return;
     }
 
@@ -103,22 +120,22 @@ void Server::start(int port) {
     server_addr.sin_port = htons(port);
     server_addr.sin_addr.s_addr = INADDR_ANY;
 
-    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
-        std::cerr << "Error binding socket" << std::endl;
+    if ( bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR ) {
+        std::cerr << "Ошибка привязки сокета" << std::endl;
         return;
     }
 
-    if (listen(server_socket, 10) == -1) {
-        std::cerr << "Error listening on socket" << std::endl;
+    if ( listen(server_socket, 10) == SOCKET_ERROR ) {
+        std::cerr << "Ошибка прослушивания порта" << std::endl;
         return;
     }
 
-    std::cout << "Server listening on port " << port << std::endl;
+    std::cout << "Сервер слушает на порту " << port << std::endl;
 
     while (true) {
         SOCKET client_socket = accept(server_socket, nullptr, nullptr);
         if (client_socket == INVALID_SOCKET) {
-            std::cerr << "Accept failed!" << std::endl;
+            std::cerr << "Ошибка подключения клиента!" << std::endl;
             continue;
         }
 

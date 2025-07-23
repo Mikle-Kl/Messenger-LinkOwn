@@ -3,7 +3,7 @@
 int main() {
         
     #ifdef _WIN32
-        system("chcp 65001 > nul");
+        SetConsoleOutputCP(CP_UTF8);
         WSADATA wsaData; 
         if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
             std::cerr << "WSAStartup failed!" << std::endl;
@@ -18,14 +18,41 @@ int main() {
         return 1;
     }
 
-    std::cout << "Введите никнейм: ";
-    std::string nickname;
-    std::getline(std::cin, nickname);
-
-    std::string msg;
     
+    std::string nickname;
+    while (true) {
+        std::cout << "Введите никнейм: ";
+        std::getline(std::cin, nickname);
+
+        client.send_message("/nick:" + nickname);
+
+        // Временно читаем ответ сами
+        char buf[1024];
+        int len = recv(client.get_socket(), buf, sizeof(buf) - 1, 0);
+        if (len <= 0) {
+            std::cerr << "Ошибка при получении ответа от сервера." << std::endl;
+            return 1;
+        }
+
+        buf[len] = '\0';
+        std::string reply(buf);
+
+        std::cout << reply;
+
+        if (reply.find("уже занят") != std::string::npos) {
+            std::cout << "Этот ник уже занят, попробуйте другой." << std::endl;
+            continue;
+        } else if (reply.find("установлен") != std::string::npos) {
+            break;
+        } else {
+            std::cout << "Неожиданный ответ сервера: " << reply << std::endl;
+            continue;
+        }
+    }
+
+
     client.receive_messages();
-    client.send_message("/nick:"+nickname);
+    std::string msg;
     
     while(true){
         std::cout << "> ";
@@ -46,7 +73,7 @@ int main() {
             client.send_message(msg);
             continue;
         }
-        if (!client.send_message(nickname+":"+msg)) {
+        if (!client.send_message(msg)) {
             std::cerr << "Ошибка отправки. Завершаем работу клиента." << std::endl;
             break;
         }

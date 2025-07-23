@@ -5,6 +5,7 @@
     #define _WINSOCK_DEPRECATED_NO_WARNINGS
     #include <winsock2.h>
     #include <ws2tcpip.h>
+    #include <windows.h>
     #pragma comment(lib, "ws2_32.lib") // В зависимости от компилятора 
 #else
     #include <sys/types.h>
@@ -20,6 +21,8 @@
 #include <thread>
 #include <mutex> //подключает механизмы синхронизации потоков
 
+extern std::atomic<bool> nick_taken;
+
 
 class Client {
 public:
@@ -29,6 +32,7 @@ public:
     bool send_message(const std::string& message);
     void receive_messages();
     void stop();
+    SOCKET get_socket() const { return client_socket; }
 private:
     #ifdef _WIN32
         SOCKET client_socket;

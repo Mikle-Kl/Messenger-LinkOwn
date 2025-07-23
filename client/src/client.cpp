@@ -1,10 +1,10 @@
 #include "client.h"
 #include <limits>
 
+std::atomic<bool> nick_taken(false);
 
 
 Client::Client() : client_socket(-1), running(false) {}
-
 Client::~Client() { stop(); }
 
 bool Client::connect_to_server(const std::string& address, int port) {
@@ -28,16 +28,16 @@ bool Client::connect_to_server(const std::string& address, int port) {
     // Проверка на ошибку подключения
     if (
         #ifdef _WIN32
-                connect(client_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR
+            connect(client_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR
         #else
-                connect(client_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1
+            connect(client_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1
         #endif
             ) {
-                std::cerr << "Connection failed!" << std::endl;
+            std::cerr << "Ошибка подключения!" << std::endl;
         #ifdef _WIN32
-                std::cerr << "WSA Error code: " << WSAGetLastError() << std::endl;
+            std::cerr << "WSA Error code: " << WSAGetLastError() << std::endl;
         #else
-                perror("connect"); // Выведет подробности на Linux/macOS
+            perror("connect"); // Выведет подробности на Linux/macOS
         #endif
             return false;
         }
@@ -50,7 +50,7 @@ bool Client::send_message(const std::string& message) {
     // Преобразуем строку в указатель на C-style строку
     const char* data = message.c_str();
     if (message.size() > static_cast<size_t>(std::numeric_limits<int>::max())) {
-        std::cerr << "Message is too large to send!" << std::endl;
+        std::cerr << "Сообщение слишком большое для отправки!" << std::endl;
         return false;
     }
     int length = static_cast<int>(message.size()); 
