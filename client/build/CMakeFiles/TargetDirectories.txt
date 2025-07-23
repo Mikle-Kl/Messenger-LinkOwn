@@ -1,3 +1,3 @@
-C:/Users/petr1/OneDrive/Documents/GitHub/secret/client/build/CMakeFiles/client.dir
-C:/Users/petr1/OneDrive/Documents/GitHub/secret/client/build/CMakeFiles/edit_cache.dir
-C:/Users/petr1/OneDrive/Documents/GitHub/secret/client/build/CMakeFiles/rebuild_cache.dir
+C:/Users/ADMIN/Documents/GitHub/secret/client/build/CMakeFiles/client.dir
+C:/Users/ADMIN/Documents/GitHub/secret/client/build/CMakeFiles/edit_cache.dir
+C:/Users/ADMIN/Documents/GitHub/secret/client/build/CMakeFiles/rebuild_cache.dir
