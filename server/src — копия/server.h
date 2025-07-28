@@ -8,8 +8,8 @@
 #pragma comment(lib, "ws2_32.lib") // Для линковки с библиотекой Winsock
 
 #include <string>
-#include <thread> 
-#include <unordered_map> 
+#include <thread> // Для создания потоков
+#include <unordered_map> //Ключ-значение Хэш-таблица
 #include <mutex> //Синхронизации доступа к общим ресурсам между потоками
 #include <unordered_set>
 
@@ -19,25 +19,10 @@ public:
     Server(); 
     ~Server(); 
     void start(int port); 
-    bool initialize_winsock();
-    bool create_socket();
-    bool bind_socket(int port);
-    bool listen_socket();
-
     void handle_client(SOCKET client_socket); 
-    std::string receive_message(SOCKET client_socket);
-    void log_client_message(SOCKET client_socket, const std::string& msg);
-    std::string format_message(SOCKET client_socket, const std::string& msg);
-    bool broadcast(SOCKET from_socket, const std::string& message);
-
+    bool broadcast(SOCKET from_socket, const char* data, int length);
     bool handle_command(SOCKET client_socket, const std::string& msg);
-    std::string parse_nickname(const std::string& msg);
-    bool process_nickname(SOCKET client_socket, const std::string& nickname);
-    void send_user_list(SOCKET client_socket);
-    bool send_message(SOCKET client_socket, const std::string& msg);
-
     void remove_client(SOCKET client_socket);
-
 private:
     std::mutex clients_mutex;  
     std::unordered_map<SOCKET, std::string> users;  

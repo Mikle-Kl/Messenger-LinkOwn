@@ -17,11 +17,10 @@
 #endif
 #include <string>
 #include <iostream>
-#include <atomic>
 #include <thread>
+#include <atomic>
 #include <mutex> //подключает механизмы синхронизации потоков
 
-extern std::atomic<bool> nick_taken;
 
 
 class Client {
@@ -29,10 +28,16 @@ public:
     Client();
     ~Client();
     bool connect_to_server(const std::string& address, int port);
+    void run_chat();
+    bool set_nickname();
     bool send_message(const std::string& message);
-    void receive_messages();
+    bool handle_command(const std::string& msg);
+    void start_receiving();
     void stop();
+
+    void print_socket_error(const std::string& msg);
     SOCKET get_socket() const { return client_socket; }
+
 private:
     #ifdef _WIN32
         SOCKET client_socket;
@@ -45,4 +50,6 @@ private:
 };
 
 
+
 #endif // CLIENT_H
+

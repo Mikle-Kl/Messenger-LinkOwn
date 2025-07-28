@@ -1,11 +1,10 @@
 //{ cmake --build . } в папке build
 #include "server.h"
-constexpr int DEFAULT_PORT = 4444;
 
 int main() {    
     SetConsoleOutputCP(CP_UTF8);
 
     Server server;
-    server.start(DEFAULT_PORT); // Запуск сервера на порту 4444
+    server.start(4444); // Запуск сервера на порту 4444
     return 0;
 }
